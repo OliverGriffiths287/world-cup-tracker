@@ -1,0 +1,21 @@
+{
+  "name": "World Cup Pint Tracker",
+  "short_name": "Pint Tracker",
+  "description": "Live World Cup pint tracking, predictions, and stadium noise.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
