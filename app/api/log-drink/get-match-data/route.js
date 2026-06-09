@@ -1,41 +1,33 @@
+import { kv } from '@vercel/kv';
 import { NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
-import { REGIONS } from '@/lib/constants';
 
 export const runtime = 'edge';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
-
-export async function GET(request) {
+export async function GET(req) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const matchId = searchParams.get('matchId');
-    if (!matchId) return NextResponse.json({ error: 'No match ID provided' }, { status: 400 });
 
-    const liveData = {};
-    
-    const pipeline = redis.pipeline();
-    REGIONS.forEach((region) => {
-      pipeline.hgetall(`worldcup:match:${matchId}:region:${region.id}`);
-    });
-    
-    const results = await pipeline.exec();
+    if (!matchId) {
+      return NextResponse.json({ error: 'Missing matchId' }, { status: 400 });
+    }
 
-    REGIONS.forEach((region, index) => {
-      const data = results[index];
-      const pints = parseInt(data?.pint || '0', 10);
-      liveData[region.id] = {
-        pint: pints,
-        total: pints
-      };
-    });
+    // Grab all regional scores for this match from Upstash
+    const rawData = await kv.hgetall(matchId);
 
-    return NextResponse.json({ matchId, data: liveData }, { status: 200 });
+    // Format it so your frontend UI can read it properly
+    const formattedData = {};
+    if (rawData) {
+      Object.keys(rawData).forEach(region => {
+        formattedData[region] = {
+          pint: Number(rawData[region]),
+          total: Number(rawData[region])
+        };
+      });
+    }
+
+    return NextResponse.json({ data: formattedData });
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

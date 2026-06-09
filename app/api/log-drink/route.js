@@ -1,24 +1,22 @@
+import { kv } from '@vercel/kv';
 import { NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
 
 export const runtime = 'edge';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
-
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const { matchId, regionId, drinkType } = await request.json();
-    if (!matchId || !regionId || !drinkType) return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    const body = await req.json();
+    const { matchId, regionId } = body;
 
-    // Database key now uses 'region' instead of 'county'
-    const redisKey = `worldcup:match:${matchId}:region:${regionId}`;
-    await redis.hincrby(redisKey, drinkType, 1);
+    if (!matchId || !regionId) {
+      return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    // This adds +1 to the specific region for the active match
+    await kv.hincrby(matchId, regionId, 1);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
