@@ -51,7 +51,8 @@ export default function Home() {
           const chunk = MATCHES.slice(i, i + chunkSize);
           const promises = chunk.map(async (m) => {
             try {
-              const res = await fetch(`/api/get-match-data?matchId=${m.id}`);
+              // 🚨 ADDED CACHE BYPASS HERE
+              const res = await fetch(`/api/get-match-data?matchId=${m.id}`, { cache: 'no-store' });
               const contentType = res.headers.get("content-type");
               if (res.ok && contentType && contentType.includes("application/json")) {
                 const result = await res.json();
@@ -78,7 +79,8 @@ export default function Home() {
   useEffect(() => {
     const fetchActiveStats = async () => {
       try {
-        const res = await fetch(`/api/get-match-data?matchId=${activeMatch}`);
+        // 🚨 ADDED CACHE BYPASS HERE
+        const res = await fetch(`/api/get-match-data?matchId=${activeMatch}`, { cache: 'no-store' });
         const contentType = res.headers.get("content-type");
         if (res.ok && contentType && contentType.includes("application/json")) {
           const result = await res.json();
